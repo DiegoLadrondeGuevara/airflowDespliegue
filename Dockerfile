@@ -1,27 +1,30 @@
-# Usa la imagen oficial de Apache Airflow
+# Imagen base oficial de Airflow
 FROM apache/airflow:2.5.0-python3.9
+
+# Cambiar al usuario root para instalar paquetes del sistema
+USER root
+
+# Instalar SQLite (por si no está incluido)
+RUN apt-get update && apt-get install -y sqlite3 libsqlite3-dev
+
+# Volver al usuario airflow
+USER airflow
 
 # Establece el directorio de trabajo
 WORKDIR /opt/airflow
 
-# Copia los archivos del DAG al contenedor
+# Copiar los DAGs y requirements
 COPY ./dags /opt/airflow/dags
 COPY ./requirements.txt /opt/airflow/requirements.txt
 
-# Instala las dependencias del archivo requirements.txt
+# Instalar dependencias de Python
 RUN pip install --no-cache-dir -r /opt/airflow/requirements.txt
 
-# Establece las variables de entorno necesarias para Airflow
+# Establecer Airflow Home
 ENV AIRFLOW_HOME=/opt/airflow
 
-# Si necesitas variables como las de S3, puedes agregarlas aquí:
-ENV S3_BUCKET_NAME="diegolde-apache-bucket"
-ENV SUBNET_ID_1="subnet-abc123"
-ENV SUBNET_ID_2="subnet-def456"
-ENV SOURCE_BUCKET_ARN="arn:aws:s3:::diegolde-apache-bucket"
-
-# Exponer el puerto de Airflow (para acceder a la UI)
+# Exponer el puerto de la UI
 EXPOSE 8080
 
-# Comando para ejecutar el webserver y el scheduler
-CMD ["bash", "-c", "airflow webserver & airflow scheduler"]
+# Importante: NO ejecutar webserver y scheduler aquí
+# Se ejecutarán en ECS Task Definitions
